@@ -5,6 +5,7 @@ import entity.Genre;
 import service.GenreService;
 
 import java.util.List;
+import java.util.Optional;
 
 public class GenreServiceImpl implements GenreService {
     private final GenreDao genreDao;
@@ -19,8 +20,10 @@ public class GenreServiceImpl implements GenreService {
     }
 
     @Override
-    public void createGenre(String name) {
-        genreDao.save(new Genre(null, name));
+    public Genre createGenre(String name) {
+        Genre genre = new Genre(null, name);
+        genreDao.save(genre);
+        return genre;
     }
 
     @Override
@@ -31,5 +34,9 @@ public class GenreServiceImpl implements GenreService {
     @Override
     public void updateGenre(Long genreId, String newName) {
         genreDao.save(new Genre(genreId, newName));
+    }
+    @Override
+    public Optional<Genre> getGenreById(Long genreId) {
+        return genreDao.findById(genreId);
     }
 }

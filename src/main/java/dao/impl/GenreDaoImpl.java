@@ -68,9 +68,14 @@ public class GenreDaoImpl implements GenreDao {
         if (genre.getId() == null) {
             String sql = "INSERT INTO genres(name) VALUES(?)";
             try (Connection c = ds.getConnection();
-                 PreparedStatement ps = c.prepareStatement(sql)) {
+                 PreparedStatement ps = c.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS)) {
                 ps.setString(1, genre.getName());
                 ps.executeUpdate();
+                try (ResultSet rs = ps.getGeneratedKeys()) {
+                    if (rs.next()) {
+                        genre.setId(rs.getLong(1));
+                    }
+                }
             } catch (SQLException e) {
                 throw new RuntimeException(e);
             }
