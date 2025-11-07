@@ -3,6 +3,7 @@ package util;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import io.github.cdimascio.dotenv.Dotenv;
 
 import java.io.InputStream;
 import java.util.Properties;
@@ -10,15 +11,13 @@ import java.util.Properties;
 public class DataSourceManager {
 
     public static HikariDataSource init() {
-        try (InputStream in = DataSourceManager.class.getClassLoader().getResourceAsStream("db.properties")) {
-            Properties p = new Properties();
-            p.load(in);
-//
-            String driver = p.getProperty("db.driver");
+        try {
+            Dotenv dotenv = Dotenv.load();
+            String driver = dotenv.get("DB_DRIVER");
             Class.forName(driver);
-            String url = p.getProperty("db.url");
-            String user = p.getProperty("db.user");
-            String password = p.getProperty("db.password");
+            String url = dotenv.get("DB_URL");
+            String user = dotenv.get("DB_USER");
+            String password = dotenv.get("DB_PASSWORD");
             HikariConfig cfg = new HikariConfig();
             cfg.setJdbcUrl(url);
             cfg.setUsername(user);
@@ -26,8 +25,9 @@ public class DataSourceManager {
             cfg.setMaximumPoolSize(10);
             cfg.setPoolName("app-pool");
             return new HikariDataSource(cfg);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to init DataSourceManager", e);
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
         }
+        return null;
     }
 }
