@@ -13,6 +13,6 @@ public class User {
     private String login;
     private String email;
     private String passwordHash;
-    private Role role = Role.USER;
+    private Role role = Role.user;
     private LocalDateTime createdAt;
 }
