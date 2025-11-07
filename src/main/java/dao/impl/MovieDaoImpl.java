@@ -2,18 +2,22 @@ package dao.impl;
 
 import dao.MovieDao;
 import entity.Movie;
-import util.DataSourceManager;
 
+import javax.sql.DataSource;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 public class MovieDaoImpl implements MovieDao {
+    private final DataSource ds;
+
+    public MovieDaoImpl(DataSource ds) {
+        this.ds = ds;
+    }
+
     @Override
     public List<Movie> findAll() {
         String sql = "SELECT id, name, description, director_id, genre_id, rating, poster_url, year FROM movies ORDER BY id DESC";
-        try (Connection c = DataSourceManager.getConnection();
+        try (Connection c = ds.getConnection();
              PreparedStatement ps = c.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
             List<Movie> list = new ArrayList<>();
@@ -27,7 +31,7 @@ public class MovieDaoImpl implements MovieDao {
     @Override
     public Optional<Movie> findById(Long id) {
         String sql = "SELECT id, name, description, director_id, genre_id, rating, poster_url, year FROM movies WHERE id = ?";
-        try (Connection c = DataSourceManager.getConnection();
+        try (Connection c = ds.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setLong(1, id);
             try (ResultSet rs = ps.executeQuery()) {
@@ -42,7 +46,7 @@ public class MovieDaoImpl implements MovieDao {
     public Movie save(Movie m) {
         if (m.getId() == null) {
             String sql = "INSERT INTO movies(name, description, director_id, genre_id, rating, poster_url, year) VALUES(?,?,?,?,?,?,?)";
-            try (Connection c = DataSourceManager.getConnection();
+            try (Connection c = ds.getConnection();
                  PreparedStatement ps = c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
                 bind(ps, m);
                 ps.executeUpdate();
@@ -55,7 +59,7 @@ public class MovieDaoImpl implements MovieDao {
             }
         } else {
             String sql = "UPDATE movies SET name=?, description=?, director_id=?, genre_id=?, rating=?, poster_url=?, year=? WHERE id=?";
-            try (Connection c = DataSourceManager.getConnection();
+            try (Connection c = ds.getConnection();
                  PreparedStatement ps = c.prepareStatement(sql)) {
                 bind(ps, m);
                 ps.setLong(8, m.getId());
@@ -70,7 +74,7 @@ public class MovieDaoImpl implements MovieDao {
     @Override
     public boolean deleteById(Long id) {
         String sql = "DELETE FROM movies WHERE id = ?";
-        try (Connection c = DataSourceManager.getConnection();
+        try (Connection c = ds.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setLong(1, id);
             return ps.executeUpdate() > 0;
@@ -79,22 +83,23 @@ public class MovieDaoImpl implements MovieDao {
         }
     }
 
-    private List<Object> generateSqlExpressionWithFilters(String genre, Double minRating, String director) {
+    private List<Object> generateSqlExpressionWithFilters(Long genreId, Double minRating, Long directorId) {
         List<Object> sql_with_params = new ArrayList<>();
-        StringBuilder sql = new StringBuilder("SELECT id, name, description, director, genre, rating, poster_url, trailer_url, year FROM movies WHERE 1=1");
-        if (genre != null && !genre.isEmpty()) { sql.append(" AND genre = ?"); sql_with_params.add(genre); }
+        StringBuilder sql = new StringBuilder("SELECT id, name, description, director_id, genre_id, rating, poster_url, year FROM movies WHERE 1=1");
+        if (genreId != null) { sql.append(" AND genre_id = ?"); sql_with_params.add(genreId); }
         if (minRating != null) { sql.append(" AND rating >= ?"); sql_with_params.add(minRating); }
-        if (director != null && !director.isEmpty()) { sql.append(" AND director = ?"); sql_with_params.add(director); }
-        sql_with_params.addFirst(sql);
+        if (directorId != null) { sql.append(" AND director_id = ?"); sql_with_params.add(directorId); }
+        sql_with_params.add(0, sql);
         return sql_with_params;
     }
+
     @Override
-    public List<Movie> findByFilters(String genre, Double minRating, String director) {
-        List<Object> sql_with_params =  generateSqlExpressionWithFilters(genre, minRating, director);
-        StringBuilder sql = (StringBuilder) sql_with_params.getFirst();
-        List<Object> params = sql_with_params.subList(0, sql_with_params.size());
+    public List<Movie> findByFilters(Long genreId, Double minRating, Long directorId) {
+        List<Object> sql_with_params =  generateSqlExpressionWithFilters(genreId, minRating, directorId);
+        StringBuilder sql = (StringBuilder) sql_with_params.get(0);
+        List<Object> params = sql_with_params.subList(1, sql_with_params.size());
         sql.append(" ORDER BY id DESC");
-        try (Connection c = DataSourceManager.getConnection();
+        try (Connection c = ds.getConnection();
              PreparedStatement ps = c.prepareStatement(sql.toString())) {
             for (int i = 0; i < params.size(); i++) ps.setObject(i + 1, params.get(i));
             List<Movie> list = new ArrayList<>();
@@ -108,12 +113,12 @@ public class MovieDaoImpl implements MovieDao {
     }
 
     @Override
-    public Optional<Movie> findRandomByFilters(String genre, Double minRating, String director) {
-        List<Object> sql_with_params =  generateSqlExpressionWithFilters(genre, minRating, director);
-        StringBuilder sql = (StringBuilder) sql_with_params.getFirst();
-        List<Object> params = sql_with_params.subList(0, sql_with_params.size());
-        sql.append(" ORDER BY RAND() LIMIT 1");
-        try (Connection c = DataSourceManager.getConnection();
+    public Optional<Movie> findRandomByFilters(Long genreId, Double minRating, Long directorId) {
+        List<Object> sql_with_params =  generateSqlExpressionWithFilters(genreId, minRating, directorId);
+        StringBuilder sql = (StringBuilder) sql_with_params.get(0);
+        List<Object> params = sql_with_params.subList(1, sql_with_params.size());
+        sql.append(" ORDER BY RANDOM() LIMIT 1");
+        try (Connection c = ds.getConnection();
              PreparedStatement ps = c.prepareStatement(sql.toString())) {
             for (int i = 0; i < params.size(); i++) ps.setObject(i + 1, params.get(i));
             try (ResultSet rs = ps.executeQuery()) {
@@ -124,11 +129,38 @@ public class MovieDaoImpl implements MovieDao {
         }
     }
 
+    public Map<String, Object> getFullMovieInformation(Long movieId) {
+        String sql = "SELECT movies.id AS id, movies.name AS movie_name, description, rating, poster_url, year, " +
+                "directors.name AS director_name, genres.name AS genre_name " +
+                "FROM movies " +
+                "JOIN directors ON movies.director_id = directors.id " +
+                "JOIN genres ON movies.genre_id = genres.id " +
+                "WHERE movies.id = ?";
+        try (Connection c = ds.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setLong(1, movieId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? Map.of(
+                        "id", rs.getLong("id"),
+                        "name", rs.getString("movie_name"),
+                        "description", rs.getString("description"),
+                        "rating", rs.getDouble("rating"),
+                        "posterUrl", rs.getString("poster_url"),
+                        "year", rs.getInt("year"),
+                        "director", rs.getString("director_name"),
+                        "genre", rs.getString("genre_name")
+                ) : null;
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private void bind(PreparedStatement ps, Movie m) throws SQLException {
         ps.setString(1, m.getName());
         ps.setString(2, m.getDescription());
-        ps.setInt(3, m.getDirectorId());
-        ps.setInt(4, m.getGenreId());
+        ps.setLong(3, m.getDirectorId());
+        ps.setLong(4, m.getGenreId());
         if (m.getRating() != null) ps.setDouble(5, m.getRating()); else ps.setNull(5, Types.DOUBLE);
         ps.setString(6, m.getPosterUrl());
         ps.setInt(7, m.getYear());
@@ -139,12 +171,13 @@ public class MovieDaoImpl implements MovieDao {
         m.setId(rs.getLong("id"));
         m.setName(rs.getString("name"));
         m.setDescription(rs.getString("description"));
-        m.setDirectorId(rs.getInt("director_id"));
-        m.setGenreId(rs.getInt("genre_id"));
+        m.setDirectorId(rs.getLong("director_id"));
+        m.setGenreId(rs.getLong("genre_id"));
         double rating = rs.getDouble("rating");
         if (!rs.wasNull()) m.setRating(rating);
         m.setPosterUrl(rs.getString("poster_url"));
         m.setYear(rs.getInt("year"));
         return m;
     }
+
 }

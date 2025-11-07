@@ -9,5 +9,6 @@ public interface DirectorDao {
     Optional<Director> findById(Long id);
     Optional<Director> findByName(String name);
     List<Director> findAll();
-    Director save(Director director);
+    void save(Director director);
+    void deleteById(Long id);
 }

@@ -1,18 +1,23 @@
 package dao.impl;
 
 import dao.UserWatchedDao;
-import entity.UserWatched;
-import util.DataSourceManager;
 
+import javax.sql.DataSource;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
 public class UserWatchedDaoImpl implements UserWatchedDao {
+    private final DataSource ds;
+
+    public UserWatchedDaoImpl(DataSource ds) {
+        this.ds = ds;
+    }
+
     @Override
     public void add(Long userId, Long movieId) {
         String sql = "INSERT INTO user_watched(user_id, movie_id) VALUES (?, ?) ON CONFLICT (user_id, movie_id) DO NOTHING";
-        try (Connection c = DataSourceManager.getConnection();
+        try (Connection c = ds.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setLong(1, userId);
             ps.setLong(2, movieId);
@@ -25,7 +30,7 @@ public class UserWatchedDaoImpl implements UserWatchedDao {
     @Override
     public void remove(Long userId, Long movieId) {
         String sql = "DELETE FROM user_watched WHERE user_id = ? AND movie_id = ?";
-        try (Connection c = DataSourceManager.getConnection();
+        try (Connection c = ds.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setLong(1, userId);
             ps.setLong(2, movieId);
@@ -38,7 +43,7 @@ public class UserWatchedDaoImpl implements UserWatchedDao {
     @Override
     public boolean exists(Long userId, Long movieId) {
         String sql = "SELECT 1 FROM user_watched WHERE user_id = ? AND movie_id = ?";
-        try (Connection c = DataSourceManager.getConnection();
+        try (Connection c = ds.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setLong(1, userId);
             ps.setLong(2, movieId);
@@ -53,7 +58,7 @@ public class UserWatchedDaoImpl implements UserWatchedDao {
     @Override
     public List<Long> findMovieIdsByUser(Long userId) {
         String sql = "SELECT movie_id FROM user_watched WHERE user_id = ? ORDER BY movie_id";
-        try (Connection c = DataSourceManager.getConnection();
+        try (Connection c = ds.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setLong(1, userId);
             try (ResultSet rs = ps.executeQuery()) {
@@ -68,3 +73,4 @@ public class UserWatchedDaoImpl implements UserWatchedDao {
         }
     }
 }
+

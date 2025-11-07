@@ -9,5 +9,6 @@ public interface GenreDao {
     Optional<Genre> findById(Long id);
     Optional<Genre> findByName(String name);
     List<Genre> findAll();
-    Genre save(Genre genre);
+    void save(Genre genre);
+    void deleteById(Long id);
 }
