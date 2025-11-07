@@ -5,8 +5,8 @@ import entity.Genre;
 import java.util.List;
 
 public interface GenreService {
-    public List<Genre> getAllGenres();
-    public void createGenre(String name);
-    public void deleteGenre(Long genreId);
-    public void updateGenre(Long genreId, String newName);
+    List<Genre> getAllGenres();
+    void createGenre(String name);
+    void deleteGenre(Long genreId);
+    void updateGenre(Long genreId, String newName);
 }
