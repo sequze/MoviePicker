@@ -1,7 +1,7 @@
 services:
-  pg:
+  postgres:
     image: postgres:latest
-    container_name: pg
+    container_name: postgres
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
