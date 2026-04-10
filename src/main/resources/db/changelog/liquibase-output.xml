@@ -1,0 +1,126 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+    <changeSet author="Амир (generated)" id="1775843157365-1">
+        <createTable tableName="genres">
+            <column autoIncrement="true" name="id" type="INTEGER">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="genres_pkey"/>
+            </column>
+            <column name="name" type="VARCHAR(64)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="Амир (generated)" id="1775843157365-2">
+        <createTable tableName="directors">
+            <column autoIncrement="true" name="id" type="INTEGER">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="directors_pkey"/>
+            </column>
+            <column name="name" type="VARCHAR(100)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="Амир (generated)" id="1775843157365-3">
+        <createTable tableName="movies">
+            <column autoIncrement="true" name="id" type="INTEGER">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="movies_pkey"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="TEXT"/>
+            <column name="director_id" type="INTEGER"/>
+            <column name="genre_id" type="INTEGER"/>
+            <column name="rating" type="numeric(3, 1)"/>
+            <column name="poster_url" type="VARCHAR(500)"/>
+            <column name="year" type="INTEGER"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="Амир (generated)" id="1775843157365-4">
+        <createTable tableName="user_favorites">
+            <column name="user_id" type="INTEGER">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="user_favorites_pkey"/>
+            </column>
+            <column name="movie_id" type="INTEGER">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="user_favorites_pkey"/>
+            </column>
+            <column defaultValueComputed="CURRENT_TIMESTAMP" name="created_at" type="TIMESTAMP WITHOUT TIME ZONE"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="Амир" id="1775843157365-4.1">
+        <sql>
+            CREATE TYPE user_role AS ENUM ('user', 'admin');
+        </sql>
+        <rollback>
+            DROP TYPE IF EXISTS user_role;
+        </rollback>
+    </changeSet>
+
+    <changeSet author="Амир (generated)" id="1775843157365-5">
+        <createTable tableName="users">
+            <column autoIncrement="true" name="id" type="INTEGER">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="users_pkey"/>
+            </column>
+            <column name="login" type="VARCHAR(64)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="email" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="password_hash" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValue="user" name="role" type="user_role">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueComputed="CURRENT_TIMESTAMP" name="created_at" type="TIMESTAMP WITHOUT TIME ZONE"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="Амир (generated)" id="1775843157365-6">
+        <addUniqueConstraint columnNames="name" constraintName="genres_name_key" tableName="genres"/>
+    </changeSet>
+    <changeSet author="Амир (generated)" id="1775843157365-7">
+        <addUniqueConstraint columnNames="login" constraintName="users_login_key" tableName="users"/>
+    </changeSet>
+    <changeSet author="Амир (generated)" id="1775843157365-8">
+        <createTable tableName="user_watched">
+            <column name="user_id" type="INTEGER">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="user_watched_pkey"/>
+            </column>
+            <column name="movie_id" type="INTEGER">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="user_watched_pkey"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="Амир (generated)" id="1775843157365-9">
+        <addForeignKeyConstraint baseColumnNames="movie_id" baseTableName="user_favorites" constraintName="fk_fav_movie"
+                                 deferrable="false" initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION"
+                                 referencedColumnNames="id" referencedTableName="movies" validate="true"/>
+    </changeSet>
+    <changeSet author="Амир (generated)" id="1775843157365-10">
+        <addForeignKeyConstraint baseColumnNames="movie_id" baseTableName="user_watched" constraintName="fk_fav_movie"
+                                 deferrable="false" initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION"
+                                 referencedColumnNames="id" referencedTableName="movies" validate="true"/>
+    </changeSet>
+    <changeSet author="Амир (generated)" id="1775843157365-11">
+        <addForeignKeyConstraint baseColumnNames="user_id" baseTableName="user_favorites" constraintName="fk_fav_user"
+                                 deferrable="false" initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION"
+                                 referencedColumnNames="id" referencedTableName="users" validate="true"/>
+    </changeSet>
+    <changeSet author="Амир (generated)" id="1775843157365-12">
+        <addForeignKeyConstraint baseColumnNames="user_id" baseTableName="user_watched" constraintName="fk_fav_user"
+                                 deferrable="false" initiallyDeferred="false" onDelete="CASCADE" onUpdate="NO ACTION"
+                                 referencedColumnNames="id" referencedTableName="users" validate="true"/>
+    </changeSet>
+    <changeSet author="Амир (generated)" id="1775843157365-13">
+        <addForeignKeyConstraint baseColumnNames="director_id" baseTableName="movies" constraintName="fk_movie_director"
+                                 deferrable="false" initiallyDeferred="false" onDelete="SET NULL" onUpdate="NO ACTION"
+                                 referencedColumnNames="id" referencedTableName="directors" validate="true"/>
+    </changeSet>
+    <changeSet author="Амир (generated)" id="1775843157365-14">
+        <addForeignKeyConstraint baseColumnNames="genre_id" baseTableName="movies" constraintName="fk_movie_genre"
+                                 deferrable="false" initiallyDeferred="false" onDelete="SET NULL" onUpdate="NO ACTION"
+                                 referencedColumnNames="id" referencedTableName="genres" validate="true"/>
+    </changeSet>
+</databaseChangeLog>
